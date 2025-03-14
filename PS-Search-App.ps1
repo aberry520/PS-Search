@@ -73,10 +73,12 @@ while ($true) {
             Write-Host "1. New Search this Directory" 
         }
         2 { 
-            Write-Host "2. New Search enter Directory" 
+            $UserFiles = read-host "Enter the file paths"
+            New-UserFiles $UserFiles
         }
         3 { 
-            Write-Host "3. Search given filepaths"
+            $UserFiles = read-host "Enter the file paths"
+            New-UserFiles $UserFiles -split ','
         }
         9 {
             Write-Host "`n`nGood Bye`n`n"
