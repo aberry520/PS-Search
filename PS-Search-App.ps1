@@ -333,7 +333,47 @@ while ($true) {
             }
         }
         2 { 
-            Search-FilesByDirectory @()
+            $searchResults = @()
+            $filteredResults = @()
+            $searchResults = Search-FilesByDirectory $searchResults
+            $one = $true
+            while ($one){
+                Write-Host "`n`nSearch in filtered results?`nY: yes`nN: no (new search)`nR: restart with original results`nPO: print out`nQ: quit to main menu`n"
+                $userChoice = Read-Host "Enter your choice"
+                switch ($userChoice) {
+                    "Q" { $one = $false }
+                    "Y" {
+                        if ($filteredResults.Count -gt 0) {
+                            Write-Host "filterd greater 0"
+                            $filteredResults = Search-FilesByDirectory $filteredResults
+                        } else {
+                            Write-Host "filterd less than or equal 0"
+                            $filteredResults = Search-FilesByDirectory $searchResults
+                        }
+                    }
+                    "N" {
+                        $filteredResults = @()
+                        $searchResults = Search-FilesByDirectory @()
+                    }
+                    "R" {
+                        $filteredResults = @()
+                        Write-Host "Restarting with original results..."
+                        continue  # Jumps back to the beginning of the while loop
+                    }
+                    "PO" {
+                        if ($filteredResults.Count -eq 0){
+                            $searchResults | ForEach-Object { Write-Host -NoNewline "$($_.FullName)," }
+                            Write-Host  # To add a final newline after all the results
+                        } else {
+                            $filteredResults | ForEach-Object { Write-Host -NoNewline "$($_.FullName)," }
+                            Write-Host  # To add a final newline after all the results
+                        }
+                    }
+                    default {
+                        Write-Host "Invalid choice. Please enter a valid option."
+                    }
+                }
+            }
         }
         3 { 
             $UserFiles = read-host "Enter file paths seperated by commas"
