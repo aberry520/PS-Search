@@ -1,49 +1,81 @@
-function Search-FilesCurrentDirectory () {
-    $files = @()
-    # Get file location        
-    $directory = Get-Location
-    Write-Host "Searching in current directory: $directory"
-    
-    # Prompt for search term
-    $searchPattern = Read-Host "Enter Search"
-    
-    # Prompt for start date
-    $startDate = Read-Host "Start Date (MM/DD/YYYY)"
-    $startDate = if ($startDate) { [datetime]::ParseExact($startDate, "MM/dd/yyyy", $null) } else { $null }
-    
-    # Prompt for end date
-    $endDate = Read-Host "End Date (MM/DD/YYYY)"
-    $endDate = if ($endDate) { [datetime]::ParseExact($endDate, "MM/dd/yyyy", $null).AddHours(23).AddMinutes(59) } else {$null }
-    
-    # Capture start time
-    $startTime = Get-Date
+function Search-FilesCurrentDirectory ($files) {
+    # $files = @()
+    if ($files) {
+        # Prompt for search term
+        $searchPattern = Read-Host "Enter Search"
         
-    # Get all matching files
-    $foundFiles = Get-ChildItem -Path $directory -File -Recurse | Where-Object {
-        ($startDate -eq $null -or $_.CreationTime -ge $startDate) -and
-        ($endDate -eq $null -or $_.CreationTime -le $endDate)
+        # Capture start time
+        $startTime = Get-Date
+        
+        $fileCount = 0
+        $totalFiles = $files.Count
+        Write-Host "`n`nSearching $totalFiles files..."
+        
+        
+        $filteredFiles = @()
+        # Loop through each file and search for the pattern 
+        $files | ForEach-Object {
+            $fileCount++
+            
+            # Update progress without printing new line
+            if ($fileCount % 10 -eq 0 -or $fileCount -eq $totalFiles) {
+                Write-Host "$fileCount / $totalFiles" -NoNewline
+                Write-Host "`r" -NoNewline
+            }
+        
+            # Search using Select-String (faster than Get-Content)
+            if (Select-String -Path $_.FullName -Pattern $searchPattern -Quiet) {
+                $filteredFiles += $_
+            }
+        }
+        $files = $filteredFiles
     }
-
-    $fileCount = 0
-    $totalFiles = $foundFiles.Count
-    Write-Host "`n`nSearching $totalFiles files..."
+    else {     
+        # Get file location        
+        $directory = Get-Location
+        Write-Host "Searching in current directory: $directory"
         
-    # Loop through each file and search for the pattern 
-    $foundFiles | ForEach-Object {
-        $fileCount++
+        # Prompt for search term
+        $searchPattern = Read-Host "Enter Search"
         
-        # Update progress without printing new line
-        if ($fileCount % 10 -eq 0 -or $fileCount -eq $totalFiles) {
-            Write-Host "$fileCount / $totalFiles" -NoNewline
-            Write-Host "`r" -NoNewline
+        # Prompt for start date
+        $startDate = Read-Host "Start Date (MM/DD/YYYY)"
+        $startDate = if ($startDate) { [datetime]::ParseExact($startDate, "MM/dd/yyyy", $null) } else { $null }
+        
+        # Prompt for end date
+        $endDate = Read-Host "End Date (MM/DD/YYYY)"
+        $endDate = if ($endDate) { [datetime]::ParseExact($endDate, "MM/dd/yyyy", $null).AddHours(23).AddMinutes(59) } else {$null }
+        
+        # Capture start time
+        $startTime = Get-Date
+            
+        # Get all matching files
+        $foundFiles = Get-ChildItem -Path $directory -File -Recurse | Where-Object {
+            ($startDate -eq $null -or $_.CreationTime -ge $startDate) -and
+            ($endDate -eq $null -or $_.CreationTime -le $endDate)
         }
     
-        # Search using Select-String (faster than Get-Content)
-        if (Select-String -Path $_.FullName -Pattern $searchPattern -Quiet) {
-            $files += [PSCustomObject]@{
-                FileName = $_.Name
-                CreationDate = $_.CreationTime.ToString('yyyy/MM/dd HH:mm:ss')
-                FullName = $_.FullName
+        $fileCount = 0
+        $totalFiles = $foundFiles.Count
+        Write-Host "`n`nSearching $totalFiles files..."
+            
+        # Loop through each file and search for the pattern 
+        $foundFiles | ForEach-Object {
+            $fileCount++
+            
+            # Update progress without printing new line
+            if ($fileCount % 10 -eq 0 -or $fileCount -eq $totalFiles) {
+                Write-Host "$fileCount / $totalFiles" -NoNewline
+                Write-Host "`r" -NoNewline
+            }
+        
+            # Search using Select-String (faster than Get-Content)
+            if (Select-String -Path $_.FullName -Pattern $searchPattern -Quiet) {
+                $files += [PSCustomObject]@{
+                    FileName = $_.Name
+                    CreationDate = $_.CreationTime.ToString('yyyy/MM/dd HH:mm:ss')
+                    FullName = $_.FullName
+                }
             }
         }
     }
@@ -57,12 +89,12 @@ function Search-FilesCurrentDirectory () {
 
     # Display results
     if ($files.Count -gt 0) {
-        $files | ForEach-Object { Write-Host "$($_.CreationDate), $($_.FullName)" }
+        $files | ForEach-Object { Write-Host "$($_.CreationDate), $($_.FileName)" }
     } else {
         Write-Host "No files contained '$searchPattern'."
     }
 
-    Write-Host "Search complete. Time taken: $elapsedTime.`nFiles found: $($files.Count)`nSearch: '$searchPattern'"
+    Write-Host "`n`n`nTime: $elapsedTime.`nFiles found: $($files.Count)`nSearch: '$searchPattern'"
     return $files
 }
 
@@ -252,7 +284,47 @@ while ($true) {
 
     switch ($choice) {
         1 { 
-            Search-FilesCurrentDirectory
+            $searchResults = @()
+            $filteredResults = @()
+            $searchResults = Search-FilesCurrentDirectory $searchResults
+            $one = $true
+            while ($one){
+                Write-Host "`n`nSearch in filtered results?`nY: yes`nN: no (new search)`nR: restart with original results`nPO: print out`nQ: quit to main menu`n"
+                $userChoice = Read-Host "Enter your choice"
+                switch ($userChoice) {
+                    "Q" { $one = $false }
+                    "Y" {
+                        if ($filteredResults.Count -gt 0) {
+                            Write-Host "filterd greater 0"
+                            $filteredResults = Search-FilesCurrentDirectory $filteredResults
+                        } else {
+                            Write-Host "filterd less than or equal 0"
+                            $filteredResults = Search-FilesCurrentDirectory $searchResults
+                        }
+                    }
+                    "N" {
+                        $filteredResults = @()
+                        $searchResults = Search-FilesCurrentDirectory @()
+                    }
+                    "R" {
+                        $filteredResults = @()
+                        Write-Host "Restarting with original results..."
+                        continue  # Jumps back to the beginning of the while loop
+                    }
+                    "PO" {
+                        if ($filteredResults.Count -eq 0){
+                            $searchResults | ForEach-Object { Write-Host -NoNewline "$($_.FullName)," }
+                            Write-Host  # To add a final newline after all the results
+                        } else {
+                            $filteredResults | ForEach-Object { Write-Host -NoNewline "$($_.FullName)," }
+                            Write-Host  # To add a final newline after all the results
+                        }
+                    }
+                    default {
+                        Write-Host "Invalid choice. Please enter a valid option."
+                    }
+                }
+            }
         }
         2 { 
             Search-FilesByDirectory @()
