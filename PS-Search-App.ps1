@@ -79,8 +79,6 @@ function Search-FilesCurrentDirectory ($files) {
         }
     }
 
-    # Sort the results by CreationDate
-    # $files = $files | Sort-Object -Property CreationDate
 
     # Capture end time
     $endTime = Get-Date
@@ -88,7 +86,7 @@ function Search-FilesCurrentDirectory ($files) {
 
     # Display results
     if ($files.Count -gt 0) {
-        $files | ForEach-Object { Write-Host "$($_.CreationDate), $($_.FileName)" }
+        $files | Sort-Object -Property CreationDate | ForEach-Object { Write-Host "$($_.CreationDate), $($_.FileName)" }
     } else {
         Write-Host "No files contained '$searchPattern'."
     }
@@ -178,8 +176,6 @@ function Search-FilesByDirectory ($files) {
         }
     }
 
-    # Sort the results by CreationDate
-    # $files = $files | Sort-Object -Property CreationDate
 
     # Capture end time
     $endTime = Get-Date
@@ -187,7 +183,7 @@ function Search-FilesByDirectory ($files) {
 
     # Display results
     if ($files.Count -gt 0) {
-        $files | ForEach-Object { Write-Host "$($_.CreationDate), $($_.FileName)" }
+        $files | Sort-Object -Property CreationDate | ForEach-Object { Write-Host "$($_.CreationDate), $($_.FileName)" }
     } else {
         Write-Host "No files contained '$searchPattern'."
     }
@@ -227,8 +223,6 @@ function New-UserFiles ($files) {
             }
         }
     }
-    # Sort the results by CreationDate in ascending order (oldest first)
-    # $filteredFiles = $filteredFiles | Sort-Object -Property CreationDate -Descending
 
     # Capture end time
     $endTime = Get-Date
@@ -237,7 +231,7 @@ function New-UserFiles ($files) {
     # Display results
     if ($filteredFiles.Count -gt 0) {
         Write-Host "Files containing '$searchPattern':"
-        $filteredFiles | ForEach-Object { Write-Host "$($_.CreationDate), $($_.FullName)" }
+        $filteredFiles | Sort-Object -Property CreationDate | ForEach-Object { Write-Host "$($_.CreationDate), $($_.FullName)" }
     } else {
         Write-Host "No files contained '$searchPattern'."
     }
@@ -314,7 +308,7 @@ while ($true) {
                     "R" {
                         $filteredResults = @()
                         Write-Host "Restarting with original results..."
-                        continue  # Jumps back to the beginning of the while loop
+                        $filteredResults = Search-FilesCurrentDirectory $searchResults
                     }
                     "PO" {
                         if ($filteredResults.Count -eq 0){
@@ -357,7 +351,7 @@ while ($true) {
                     "R" {
                         $filteredResults = @()
                         Write-Host "Restarting with original results..."
-                        continue  # Jumps back to the beginning of the while loop
+                        $filteredResults = Search-FilesCurrentDirectory $searchResults
                     }
                     "PO" {
                         if ($filteredResults.Count -eq 0){
