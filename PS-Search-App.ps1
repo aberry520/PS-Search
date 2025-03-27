@@ -80,7 +80,7 @@ function Search-FilesCurrentDirectory ($files) {
     }
 
     # Sort the results by CreationDate
-    $files = $files | Sort-Object -Property CreationDate -Descending
+    # $files = $files | Sort-Object -Property CreationDate
 
     # Capture end time
     $endTime = Get-Date
@@ -179,7 +179,7 @@ function Search-FilesByDirectory ($files) {
     }
 
     # Sort the results by CreationDate
-    $files = $files | Sort-Object -Property CreationDate -Descending
+    # $files = $files | Sort-Object -Property CreationDate
 
     # Capture end time
     $endTime = Get-Date
@@ -198,15 +198,15 @@ function Search-FilesByDirectory ($files) {
 
 function New-UserFiles ($files) {
     $filteredFiles = @()
+    # Write-Host $files
     # Prompt for search term
     $searchPattern = Read-Host "Enter the search term"
     # Capture start time
     $startTime = Get-Date
         
     # Get all matching files
-    $foundFiles = $files | ForEach-Object { Get-Item $_ }
-
-    $totalFiles = $files.Count
+    $foundFiles = $files | ForEach-Object { Get-ChildItem -Path "$($_)" -File }
+    $totalFiles = $foundFiles.Count
     Write-Host "`n`nStarting search in $totalFiles files..."
     $foundFiles | ForEach-Object {
         $fileCount++
@@ -228,7 +228,7 @@ function New-UserFiles ($files) {
         }
     }
     # Sort the results by CreationDate in ascending order (oldest first)
-    $filteredFiles = $filteredFiles | Sort-Object -Property CreationDate -Descending
+    # $filteredFiles = $filteredFiles | Sort-Object -Property CreationDate -Descending
 
     # Capture end time
     $endTime = Get-Date
@@ -238,7 +238,6 @@ function New-UserFiles ($files) {
     if ($filteredFiles.Count -gt 0) {
         Write-Host "Files containing '$searchPattern':"
         $filteredFiles | ForEach-Object { Write-Host "$($_.CreationDate), $($_.FullName)" }
-        # Write-Host $foundFiles
     } else {
         Write-Host "No files contained '$searchPattern'."
     }
@@ -376,8 +375,12 @@ while ($true) {
             }
         }
         3 { 
-            $UserFiles = read-host "Enter file paths seperated by commas"
-            New-UserFiles $UserFiles -split ','
+            $UserFiles = Read-Host "Enter file paths separated by commas"
+            $UserFilesArray = $UserFiles -split ',' | Where-Object { $_.Trim() -ne "" }
+            $three = $true
+            while ($three){
+            New-UserFiles $UserFilesArray
+            }
         }
         0 {
             Write-Host "`n`n`n`n`n`n`n`n`n`n`n`n`n`n`n`n`n`n`n`n`n`n`n`n`n`n`n
